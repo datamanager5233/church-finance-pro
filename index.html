@@ -1,0 +1,1484 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ChurchFinance Pro — Admin Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<style>
+  :root {
+    --gold: #C9A84C;
+    --gold-light: #E8C97A;
+    --gold-pale: #F5E9C8;
+    --navy: #0F1F3D;
+    --navy-mid: #1A2F57;
+    --navy-light: #243F73;
+    --cream: #FAF7F0;
+    --white: #FFFFFF;
+    --slate: #6B7A99;
+    --success: #2D9E6B;
+    --warning: #E0882A;
+    --danger: #C0392B;
+    --shadow: 0 4px 24px rgba(15,31,61,0.10);
+    --shadow-lg: 0 8px 40px rgba(15,31,61,0.16);
+    --radius: 16px;
+    --radius-sm: 10px;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--cream);
+    color: var(--navy);
+    min-height: 100vh;
+  }
+
+  /* SIDEBAR */
+  .sidebar {
+    position: fixed; left:0; top:0; bottom:0; width:260px;
+    background: var(--navy);
+    display: flex; flex-direction: column;
+    z-index: 100;
+    box-shadow: 4px 0 32px rgba(15,31,61,0.18);
+  }
+  .sidebar-logo {
+    padding: 28px 24px 20px;
+    border-bottom: 1px solid rgba(201,168,76,0.2);
+  }
+  .sidebar-logo h1 {
+    font-family: 'Playfair Display', serif;
+    color: var(--gold);
+    font-size: 1.25rem;
+    letter-spacing: 0.02em;
+  }
+  .sidebar-logo p { color: var(--slate); font-size: 0.72rem; margin-top:3px; letter-spacing:0.08em; text-transform:uppercase; }
+  .sidebar-nav { flex:1; padding: 16px 0; overflow-y:auto; }
+  .nav-section { padding: 8px 20px 4px; font-size:0.65rem; letter-spacing:0.12em; text-transform:uppercase; color: rgba(107,122,153,0.7); }
+  .nav-item {
+    display: flex; align-items:center; gap:12px;
+    padding: 11px 20px; cursor:pointer;
+    color: rgba(255,255,255,0.65);
+    font-size: 0.875rem; font-weight:500;
+    transition: all 0.18s; border-left: 3px solid transparent;
+    border-radius: 0 8px 8px 0; margin: 1px 8px 1px 0;
+  }
+  .nav-item:hover { color:#fff; background: rgba(201,168,76,0.1); border-left-color: var(--gold); }
+  .nav-item.active { color: var(--gold); background: rgba(201,168,76,0.15); border-left-color: var(--gold); }
+  .nav-item .icon { width:18px; text-align:center; font-size:1rem; }
+  .sidebar-footer {
+    padding:16px 20px;
+    border-top: 1px solid rgba(255,255,255,0.08);
+    font-size:0.75rem; color: var(--slate);
+  }
+
+  /* MAIN */
+  .main { margin-left:260px; min-height:100vh; }
+  .topbar {
+    background:var(--white);
+    padding:16px 32px;
+    display:flex; align-items:center; justify-content:space-between;
+    box-shadow: 0 2px 12px rgba(15,31,61,0.07);
+    position: sticky; top:0; z-index:50;
+  }
+  .topbar h2 { font-family:'Playfair Display',serif; font-size:1.3rem; color:var(--navy); }
+  .topbar-right { display:flex; align-items:center; gap:16px; }
+  .btn {
+    padding: 9px 20px; border-radius: var(--radius-sm);
+    font-family:'DM Sans',sans-serif; font-size:0.85rem; font-weight:600;
+    cursor:pointer; border:none; transition: all 0.18s;
+  }
+  .btn-gold { background: var(--gold); color: var(--navy); }
+  .btn-gold:hover { background: var(--gold-light); }
+  .btn-outline { background:transparent; color:var(--navy); border:1.5px solid rgba(15,31,61,0.2); }
+  .btn-outline:hover { border-color:var(--gold); color:var(--gold); }
+  .btn-danger { background:var(--danger); color:#fff; }
+  .btn-success { background:var(--success); color:#fff; }
+  .badge {
+    padding:3px 10px; border-radius:20px; font-size:0.72rem; font-weight:600;
+  }
+  .badge-gold { background:var(--gold-pale); color:var(--gold); }
+  .badge-green { background:rgba(45,158,107,0.12); color:var(--success); }
+
+  /* PAGE SECTIONS */
+  .page { display:none; padding:28px 32px; }
+  .page.active { display:block; }
+
+  /* STAT CARDS */
+  .stats-grid {
+    display: grid; grid-template-columns: repeat(4,1fr); gap:18px; margin-bottom:28px;
+  }
+  .stat-card {
+    background:var(--white); border-radius:var(--radius);
+    padding:22px 24px; box-shadow:var(--shadow);
+    position:relative; overflow:hidden;
+  }
+  .stat-card::before {
+    content:''; position:absolute; top:0; left:0; right:0; height:3px;
+    background: linear-gradient(90deg, var(--gold), var(--gold-light));
+  }
+  .stat-label { font-size:0.72rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--slate); font-weight:600; }
+  .stat-value { font-family:'Playfair Display',serif; font-size:2.1rem; color:var(--navy); margin:8px 0 4px; font-weight:700; }
+  .stat-sub { font-size:0.78rem; color:var(--slate); }
+  .stat-icon { position:absolute; right:20px; top:20px; font-size:1.6rem; opacity:0.15; }
+
+  /* CHARTS */
+  .charts-grid { display:grid; grid-template-columns:2fr 1fr; gap:20px; margin-bottom:24px; }
+  .chart-card { background:var(--white); border-radius:var(--radius); padding:24px; box-shadow:var(--shadow); }
+  .chart-title { font-family:'Playfair Display',serif; font-size:1rem; color:var(--navy); margin-bottom:16px; display:flex; justify-content:space-between; align-items:center; }
+  .chart-wrap { position:relative; height:240px; }
+
+  /* TABLES */
+  .table-card { background:var(--white); border-radius:var(--radius); padding:24px; box-shadow:var(--shadow); margin-bottom:20px; }
+  .table-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:18px; }
+  .table-title { font-family:'Playfair Display',serif; font-size:1rem; color:var(--navy); }
+  table { width:100%; border-collapse:collapse; font-size:0.85rem; }
+  th { text-align:left; padding:10px 14px; background:var(--cream); color:var(--slate); font-weight:600; font-size:0.72rem; text-transform:uppercase; letter-spacing:0.08em; }
+  th:first-child { border-radius:8px 0 0 8px; }
+  th:last-child { border-radius:0 8px 8px 0; }
+  td { padding:11px 14px; border-bottom:1px solid rgba(15,31,61,0.05); color:var(--navy); }
+  tr:last-child td { border-bottom:none; }
+  tr:hover td { background:rgba(201,168,76,0.04); }
+  .amount { font-weight:600; color:var(--navy); }
+  .tithe-badge { background:var(--navy); color:var(--gold); padding:2px 8px; border-radius:6px; font-size:0.72rem; font-weight:700; font-family:monospace; }
+
+  /* FORMS */
+  .form-grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+  .form-group { display:flex; flex-direction:column; gap:6px; }
+  .form-group.full { grid-column:1/-1; }
+  label { font-size:0.78rem; font-weight:600; color:var(--slate); text-transform:uppercase; letter-spacing:0.08em; }
+  input, select, textarea {
+    padding:10px 14px; border:1.5px solid rgba(15,31,61,0.15);
+    border-radius:var(--radius-sm); font-family:'DM Sans',sans-serif; font-size:0.88rem;
+    color:var(--navy); background:var(--white); outline:none; transition:border 0.18s;
+  }
+  input:focus, select:focus, textarea:focus { border-color:var(--gold); }
+  .form-section {
+    background:var(--white); border-radius:var(--radius); padding:28px; box-shadow:var(--shadow); margin-bottom:20px;
+  }
+  .form-section-title { font-family:'Playfair Display',serif; font-size:1.05rem; margin-bottom:20px; color:var(--navy); padding-bottom:12px; border-bottom:1px solid rgba(15,31,61,0.08); }
+  .actions-row { display:flex; gap:10px; margin-top:20px; }
+
+  /* SEARCH BAR */
+  .search-bar {
+    display:flex; gap:10px; align-items:center;
+    background:var(--white); padding:12px 16px; border-radius:var(--radius-sm);
+    box-shadow:var(--shadow); margin-bottom:20px;
+  }
+  .search-bar input { flex:1; border:none; padding:0; font-size:0.9rem; background:transparent; }
+  .search-bar input:focus { border:none; }
+
+  /* MOBILE MONEY */
+  .mm-log { background:var(--white); border-radius:var(--radius); padding:24px; box-shadow:var(--shadow); }
+  .mm-entry {
+    display:flex; align-items:center; gap:16px; padding:12px 0;
+    border-bottom:1px solid rgba(15,31,61,0.06);
+  }
+  .mm-entry:last-child { border-bottom:none; }
+  .mm-icon { width:38px; height:38px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:1rem; flex-shrink:0; }
+  .mm-icon.in { background:rgba(45,158,107,0.12); color:var(--success); }
+  .mm-icon.out { background:rgba(192,57,43,0.1); color:var(--danger); }
+  .mm-details h4 { font-size:0.87rem; font-weight:600; }
+  .mm-details p { font-size:0.75rem; color:var(--slate); }
+  .mm-amount { margin-left:auto; font-weight:700; font-size:0.95rem; }
+  .mm-amount.in { color:var(--success); }
+
+  /* TOP TITHERS */
+  .tither-row { display:flex; align-items:center; gap:14px; padding:10px 0; border-bottom:1px solid rgba(15,31,61,0.05); }
+  .tither-rank { width:26px; height:26px; border-radius:50%; background:var(--gold-pale); color:var(--gold); font-size:0.75rem; font-weight:700; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+  .tither-rank.top { background:var(--gold); color:var(--navy); }
+  .tither-name { flex:1; font-size:0.87rem; font-weight:500; }
+  .tither-amount { font-weight:700; font-size:0.9rem; color:var(--navy); }
+
+  /* FILTER ROW */
+  .filter-row { display:flex; gap:10px; align-items:center; margin-bottom:20px; flex-wrap:wrap; }
+  .filter-row select { padding:8px 14px; font-size:0.83rem; }
+
+  /* MODAL */
+  .modal-overlay { display:none; position:fixed; inset:0; background:rgba(15,31,61,0.5); z-index:200; align-items:center; justify-content:center; }
+  .modal-overlay.open { display:flex; }
+  .modal { background:var(--white); border-radius:var(--radius); padding:32px; max-width:520px; width:90%; box-shadow:var(--shadow-lg); }
+  .modal h3 { font-family:'Playfair Display',serif; margin-bottom:20px; }
+  .modal-actions { display:flex; gap:10px; justify-content:flex-end; margin-top:20px; }
+
+  /* NOTIFICATION */
+  .notif {
+    position:fixed; bottom:24px; right:24px; background:var(--navy);
+    color:var(--gold); padding:14px 20px; border-radius:var(--radius-sm);
+    font-size:0.85rem; font-weight:600; box-shadow:var(--shadow-lg);
+    transform:translateY(80px); opacity:0; transition:all 0.3s; z-index:999;
+  }
+  .notif.show { transform:translateY(0); opacity:1; }
+
+  .divider { border:none; border-top:1px solid rgba(15,31,61,0.08); margin:16px 0; }
+  .text-slate { color:var(--slate); }
+  .text-gold { color:var(--gold); }
+  .fw-bold { font-weight:700; }
+  .mb-16 { margin-bottom:16px; }
+  .two-col { display:grid; grid-template-columns:1fr 1fr; gap:20px; }
+  .three-col { display:grid; grid-template-columns:1fr 1fr 1fr; gap:20px; }
+  .scroll-table { overflow-x:auto; }
+
+  @media(max-width:1100px) {
+    .stats-grid { grid-template-columns:repeat(2,1fr); }
+    .charts-grid { grid-template-columns:1fr; }
+  }
+  @media(max-width:768px) {
+    .sidebar { width:220px; }
+    .main { margin-left:220px; }
+    .page { padding:16px; }
+    .form-grid { grid-template-columns:1fr; }
+  }
+</style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <h1>✝ ChurchFinance</h1>
+    <p>Pro Administration</p>
+  </div>
+  <nav class="sidebar-nav">
+    <div class="nav-section">Overview</div>
+    <div class="nav-item active" onclick="showPage('dashboard')">
+      <span class="icon">📊</span> Dashboard
+    </div>
+    <div class="nav-section">Members</div>
+    <div class="nav-item" onclick="showPage('members')">
+      <span class="icon">👥</span> Member Registry
+    </div>
+    <div class="nav-item" onclick="showPage('tithe-pool')">
+      <span class="icon">🎫</span> Tithe Number Pool
+    </div>
+    <div class="nav-section">Finance</div>
+    <div class="nav-item" onclick="showPage('capture')">
+      <span class="icon">✍️</span> Capture Giving
+    </div>
+    <div class="nav-item" onclick="showPage('records')">
+      <span class="icon">📋</span> Giving Records
+    </div>
+    <div class="nav-item" onclick="showPage('mobile-money')">
+      <span class="icon">📱</span> Mobile Money
+    </div>
+    <div class="nav-section">Reports</div>
+    <div class="nav-item" onclick="showPage('reports')">
+      <span class="icon">📈</span> Reports & Analytics
+    </div>
+    <div class="nav-section">Setup</div>
+    <div class="nav-item" onclick="showPage('setup')">
+      <span class="icon">⚙️</span> Setup Guide
+    </div>
+    <div class="nav-item" onclick="showPage('scripts')">
+      <span class="icon">📝</span> Google Scripts
+    </div>
+  </nav>
+  <div class="sidebar-footer">
+    <strong>ChurchFinance Pro v1.0</strong><br>
+    Powered by Google Workspace
+  </div>
+</aside>
+
+<!-- MAIN CONTENT -->
+<main class="main">
+  <div class="topbar">
+    <h2 id="page-title">Dashboard</h2>
+    <div class="topbar-right">
+      <span class="badge badge-gold">Admin</span>
+      <span style="font-size:0.8rem;color:var(--slate);" id="live-date"></span>
+    </div>
+  </div>
+
+  <!-- ===== DASHBOARD ===== -->
+  <section class="page active" id="page-dashboard">
+    <!-- Stat Cards -->
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-label">Total Tithers</div>
+        <div class="stat-value">248</div>
+        <div class="stat-sub">+12 this month</div>
+        <div class="stat-icon">👥</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Tithe Numbers Issued</div>
+        <div class="stat-value">248</div>
+        <div class="stat-sub">of 2,000 available</div>
+        <div class="stat-icon">🎫</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Active Tithers (30d)</div>
+        <div class="stat-value">187</div>
+        <div class="stat-sub">75.4% active rate</div>
+        <div class="stat-icon">✅</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">This Week Total</div>
+        <div class="stat-value">UGX 4.2M</div>
+        <div class="stat-sub">+8% vs last week</div>
+        <div class="stat-icon">💰</div>
+      </div>
+    </div>
+
+    <!-- Filter row -->
+    <div class="filter-row">
+      <label style="text-transform:none;font-size:0.85rem;">View by:</label>
+      <select id="period-filter" onchange="updateCharts()">
+        <option value="week">This Week</option>
+        <option value="month">This Month</option>
+        <option value="quarter">This Quarter</option>
+        <option value="ytd">Year to Date</option>
+      </select>
+      <select id="category-filter">
+        <option value="all">All Categories</option>
+        <option value="tithe">Tithe</option>
+        <option value="offertory">Offertory</option>
+        <option value="building">Church Building</option>
+        <option value="donation">Donation</option>
+      </select>
+    </div>
+
+    <!-- Charts -->
+    <div class="charts-grid">
+      <div class="chart-card">
+        <div class="chart-title">
+          Weekly Giving by Category
+          <span class="badge badge-gold">Line Chart</span>
+        </div>
+        <div class="chart-wrap"><canvas id="lineChart"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-title">Payment Method Split
+          <span class="badge badge-gold">Donut</span>
+        </div>
+        <div class="chart-wrap"><canvas id="donutChart"></canvas></div>
+      </div>
+    </div>
+
+    <!-- This week breakdown + top tithers -->
+    <div class="two-col">
+      <div class="table-card">
+        <div class="table-header">
+          <div class="table-title">This Week by Category</div>
+        </div>
+        <table>
+          <thead><tr><th>Category</th><th>Amount (UGX)</th><th>Count</th><th>%</th></tr></thead>
+          <tbody>
+            <tr><td>Tithe</td><td class="amount">2,100,000</td><td>124</td><td><span class="badge badge-green">50%</span></td></tr>
+            <tr><td>Offertory</td><td class="amount">1,050,000</td><td>198</td><td><span class="badge badge-green">25%</span></td></tr>
+            <tr><td>Church Building</td><td class="amount">700,000</td><td>62</td><td><span class="badge badge-gold">17%</span></td></tr>
+            <tr><td>Donation</td><td class="amount">350,000</td><td>28</td><td><span class="badge badge-gold">8%</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="table-card">
+        <div class="table-header">
+          <div class="table-title">🏆 Top Tithers (YTD)</div>
+        </div>
+        <div id="top-tithers-list">
+          <div class="tither-row"><div class="tither-rank top">1</div><div class="tither-name">John Ssemakula</div><div class="tither-amount">UGX 1,840,000</div></div>
+          <div class="tither-row"><div class="tither-rank top">2</div><div class="tither-name">Grace Namutebi</div><div class="tither-amount">UGX 1,620,000</div></div>
+          <div class="tither-row"><div class="tither-rank top">3</div><div class="tither-name">Robert Kiggundu</div><div class="tither-amount">UGX 1,450,000</div></div>
+          <div class="tither-row"><div class="tither-rank">4</div><div class="tither-name">Sarah Nakato</div><div class="tither-amount">UGX 1,200,000</div></div>
+          <div class="tither-row"><div class="tither-rank">5</div><div class="tither-name">David Musoke</div><div class="tither-amount">UGX 980,000</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Most frequent tithers -->
+    <div class="table-card">
+      <div class="table-header">
+        <div class="table-title">📅 Most Frequent Tithers</div>
+      </div>
+      <div class="scroll-table">
+        <table>
+          <thead><tr><th>#</th><th>Name</th><th>Tithe No.</th><th>Times (YTD)</th><th>Last Giving</th><th>Total Amount</th></tr></thead>
+          <tbody>
+            <tr><td>1</td><td>Grace Namutebi</td><td><span class="tithe-badge">TBGB0042</span></td><td>52</td><td>Yesterday</td><td>UGX 1,620,000</td></tr>
+            <tr><td>2</td><td>John Ssemakula</td><td><span class="tithe-badge">TBGB0017</span></td><td>48</td><td>Yesterday</td><td>UGX 1,840,000</td></tr>
+            <tr><td>3</td><td>Mary Namuganza</td><td><span class="tithe-badge">TBGB0088</span></td><td>44</td><td>3 days ago</td><td>UGX 860,000</td></tr>
+            <tr><td>4</td><td>Paul Waiswa</td><td><span class="tithe-badge">TBGB0103</span></td><td>41</td><td>1 week ago</td><td>UGX 720,000</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== MEMBERS ===== -->
+  <section class="page" id="page-members">
+    <div class="search-bar">
+      <span>🔍</span>
+      <input type="text" placeholder="Search by name, tithe number, or phone..." id="member-search" oninput="filterMembers()">
+      <button class="btn btn-gold" onclick="openModal('add-member-modal')">+ Add Member</button>
+    </div>
+    <div class="table-card">
+      <div class="table-header">
+        <div class="table-title">Member Registry <span class="text-slate" style="font-size:0.8rem;">(248 members)</span></div>
+        <div>
+          <button class="btn btn-outline" onclick="exportMembers()">⬇ Export CSV</button>
+        </div>
+      </div>
+      <div class="scroll-table">
+        <table id="member-table">
+          <thead><tr><th>Tithe No.</th><th>Full Name</th><th>Phone</th><th>Email</th><th>Joined</th><th>Status</th><th>Actions</th></tr></thead>
+          <tbody id="member-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== TITHE POOL ===== -->
+  <section class="page" id="page-tithe-pool">
+    <div class="stats-grid" style="grid-template-columns:repeat(3,1fr)">
+      <div class="stat-card">
+        <div class="stat-label">Total Pool</div>
+        <div class="stat-value">2,000</div>
+        <div class="stat-sub">TBGB0001–TBGB2000</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Assigned</div>
+        <div class="stat-value">248</div>
+        <div class="stat-sub">12.4% utilized</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Next Available</div>
+        <div class="stat-value" style="font-size:1.4rem;">TBGB0249</div>
+        <div class="stat-sub">1,752 remaining</div>
+      </div>
+    </div>
+    <div class="table-card">
+      <div class="table-header">
+        <div class="table-title">Tithe Number Pool</div>
+        <div style="display:flex;gap:8px;">
+          <select id="pool-filter" onchange="filterPool()">
+            <option value="all">All</option>
+            <option value="assigned">Assigned</option>
+            <option value="available">Available</option>
+          </select>
+        </div>
+      </div>
+      <div class="scroll-table">
+        <table>
+          <thead><tr><th>Tithe Number</th><th>Status</th><th>Assigned To</th><th>Date Issued</th></tr></thead>
+          <tbody id="pool-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== CAPTURE GIVING ===== -->
+  <section class="page" id="page-capture">
+    <div class="form-section">
+      <div class="form-section-title">💵 Capture Sunday Giving</div>
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Tithe Number or Name</label>
+          <input type="text" id="cap-tithe" placeholder="e.g. TBGB0042 or John..." oninput="lookupMember()">
+        </div>
+        <div class="form-group">
+          <label>Member Name (auto-filled)</label>
+          <input type="text" id="cap-name" placeholder="Auto-filled on lookup" readonly style="background:#f8f8f8">
+        </div>
+        <div class="form-group">
+          <label>Giving Category</label>
+          <select id="cap-category">
+            <option value="">Select category...</option>
+            <option value="Tithe">Tithe</option>
+            <option value="Offertory">Offertory</option>
+            <option value="Church Building">Church Building</option>
+            <option value="Donation">Donation</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Amount (UGX)</label>
+          <input type="number" id="cap-amount" placeholder="0">
+        </div>
+        <div class="form-group">
+          <label>Payment Method</label>
+          <select id="cap-method">
+            <option value="Cash">Cash</option>
+            <option value="Cheque">Cheque</option>
+            <option value="Mobile Money">Mobile Money</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Date</label>
+          <input type="date" id="cap-date">
+        </div>
+        <div class="form-group">
+          <label>Reference / Notes</label>
+          <input type="text" id="cap-ref" placeholder="Cheque no. or reference...">
+        </div>
+        <div class="form-group">
+          <label>Recorded By</label>
+          <input type="text" id="cap-recorder" placeholder="Administrator name">
+        </div>
+      </div>
+      <div class="actions-row">
+        <button class="btn btn-gold" onclick="captureGiving()">✅ Save Record</button>
+        <button class="btn btn-outline" onclick="clearCapture()">Clear</button>
+      </div>
+    </div>
+
+    <!-- Quick lookup result -->
+    <div class="table-card" id="lookup-result" style="display:none">
+      <div class="table-title mb-16">Member Giving History</div>
+      <table>
+        <thead><tr><th>Date</th><th>Category</th><th>Amount</th><th>Method</th></tr></thead>
+        <tbody id="lookup-tbody"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ===== RECORDS ===== -->
+  <section class="page" id="page-records">
+    <div class="filter-row">
+      <input type="text" placeholder="Search by tithe no. or name..." id="rec-search" style="flex:1;max-width:320px;padding:9px 14px;border-radius:8px;border:1.5px solid rgba(15,31,61,0.15)">
+      <select id="rec-period">
+        <option value="week">This Week</option>
+        <option value="month">This Month</option>
+        <option value="quarter">Quarter</option>
+        <option value="ytd">YTD</option>
+        <option value="all">All Time</option>
+      </select>
+      <select id="rec-category">
+        <option value="all">All Categories</option>
+        <option value="Tithe">Tithe</option>
+        <option value="Offertory">Offertory</option>
+        <option value="Church Building">Church Building</option>
+        <option value="Donation">Donation</option>
+      </select>
+      <button class="btn btn-outline" onclick="filterRecords()">🔍 Filter</button>
+      <button class="btn btn-gold" onclick="exportRecords()">⬇ Export</button>
+    </div>
+    <div class="table-card">
+      <div class="scroll-table">
+        <table>
+          <thead><tr><th>Date</th><th>Tithe No.</th><th>Name</th><th>Category</th><th>Amount (UGX)</th><th>Method</th><th>Ref</th></tr></thead>
+          <tbody id="records-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== MOBILE MONEY ===== -->
+  <section class="page" id="page-mobile-money">
+    <div class="two-col">
+      <div>
+        <div class="form-section">
+          <div class="form-section-title">📱 Mobile Money Configuration</div>
+          <div class="form-group mb-16">
+            <label>Designated Church MM Number</label>
+            <input type="text" placeholder="+256 700 000 000" id="mm-number">
+          </div>
+          <div class="form-group mb-16">
+            <label>Auto-parse SMS Format</label>
+            <select>
+              <option>MTN Mobile Money Uganda</option>
+              <option>Airtel Money Uganda</option>
+            </select>
+          </div>
+          <div class="form-group mb-16">
+            <label>Auto-reply Thank-You Message</label>
+            <textarea rows="3" placeholder="Dear [NAME], thank you for your giving of UGX [AMOUNT]. God bless you! - [CHURCH NAME]"></textarea>
+          </div>
+          <button class="btn btn-gold" onclick="notify('Configuration saved!')">Save Configuration</button>
+        </div>
+
+        <div class="form-section">
+          <div class="form-section-title">Manual MM Entry</div>
+          <div class="form-grid">
+            <div class="form-group">
+              <label>Transaction ID</label>
+              <input type="text" placeholder="MM TxID..." id="mm-txid">
+            </div>
+            <div class="form-group">
+              <label>Sender Number</label>
+              <input type="text" placeholder="+256..." id="mm-sender">
+            </div>
+            <div class="form-group">
+              <label>Tithe Number</label>
+              <input type="text" placeholder="TBGB..." id="mm-tithe">
+            </div>
+            <div class="form-group">
+              <label>Amount (UGX)</label>
+              <input type="number" id="mm-amount" placeholder="0">
+            </div>
+          </div>
+          <div class="actions-row">
+            <button class="btn btn-gold" onclick="saveMM()">Record Transaction</button>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <div class="mm-log">
+          <div class="table-header">
+            <div class="table-title">Recent MM Transactions</div>
+          </div>
+          <div id="mm-transactions"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== REPORTS ===== -->
+  <section class="page" id="page-reports">
+    <div class="three-col" style="margin-bottom:20px;">
+      <div class="chart-card">
+        <div class="chart-title">Monthly Totals</div>
+        <div class="chart-wrap"><canvas id="monthlyBar"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-title">Category Distribution</div>
+        <div class="chart-wrap"><canvas id="categoryPie"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-title">Member Growth</div>
+        <div class="chart-wrap"><canvas id="growthLine"></canvas></div>
+      </div>
+    </div>
+    <div class="table-card">
+      <div class="table-header">
+        <div class="table-title">Member Giving Summary (YTD)</div>
+        <button class="btn btn-gold" onclick="notify('Report exported!')">⬇ Export Full Report</button>
+      </div>
+      <div class="scroll-table">
+        <table>
+          <thead><tr><th>Tithe No.</th><th>Name</th><th>Tithe</th><th>Offertory</th><th>Building</th><th>Donation</th><th>Total YTD</th></tr></thead>
+          <tbody id="summary-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== SETUP GUIDE ===== -->
+  <section class="page" id="page-setup">
+    <div class="form-section">
+      <div class="form-section-title">🚀 Setup Guide — Google Sheets + Apps Script</div>
+      <div style="line-height:1.9;font-size:0.9rem;color:#333;">
+        <h3 style="font-family:'Playfair Display',serif;margin-bottom:10px;">Step 1: Create Google Sheet</h3>
+        <p>Create a new Google Sheet with the following <strong>tabs (sheets)</strong>:</p>
+        <ul style="margin:10px 0 16px 20px;">
+          <li><strong>MemberRegistry</strong> — stores all registered members</li>
+          <li><strong>TithePool</strong> — auto-generated numbers TBGB0001–TBGB2000</li>
+          <li><strong>GivingRecords</strong> — all giving transactions</li>
+          <li><strong>MobileMoneyTx</strong> — parsed mobile money transactions</li>
+          <li><strong>Config</strong> — church name, MM number, email settings</li>
+        </ul>
+        <hr class="divider">
+        <h3 style="font-family:'Playfair Display',serif;margin-bottom:10px;">Step 2: Deploy Google Apps Script</h3>
+        <p>Open <strong>Extensions → Apps Script</strong> in your sheet. Copy each script from the "Google Scripts" tab and save.</p>
+        <hr class="divider">
+        <h3 style="font-family:'Playfair Display',serif;margin-bottom:10px;">Step 3: Create Google Forms</h3>
+        <ul style="margin:10px 0 16px 20px;">
+          <li><strong>Member Registration Form</strong> → links to MemberRegistry tab</li>
+          <li><strong>Tithe Number Request Form</strong> → triggers script to assign number</li>
+        </ul>
+        <hr class="divider">
+        <h3 style="font-family:'Playfair Display',serif;margin-bottom:10px;">Step 4: Deploy Web App</h3>
+        <p>In Apps Script: <strong>Deploy → New Deployment → Web App</strong>. Set access to "Anyone". Copy the web app URL.</p>
+        <hr class="divider">
+        <h3 style="font-family:'Playfair Display',serif;margin-bottom:10px;">Step 5: Host Dashboard on GitHub Pages</h3>
+        <ul style="margin:10px 0 16px 20px;">
+          <li>Create a GitHub repo, upload this <strong>index.html</strong></li>
+          <li>Go to Settings → Pages → Deploy from main branch</li>
+          <li>Update the <code>SHEET_URL</code> variable in the JS to your deployed Apps Script URL</li>
+        </ul>
+        <hr class="divider">
+        <h3 style="font-family:'Playfair Display',serif;margin-bottom:10px;">Step 6: Mobile Money Integration</h3>
+        <p>Use <strong>SMS Forwarder</strong> (Android app) on the church phone to forward incoming MM SMS to your Apps Script webhook URL. The script parses the SMS and logs the transaction automatically.</p>
+      </div>
+    </div>
+
+    <div class="form-section">
+      <div class="form-section-title">📐 Google Sheet Column Structure</div>
+      <div class="scroll-table">
+        <table>
+          <thead><tr><th>Tab</th><th>Columns</th></tr></thead>
+          <tbody>
+            <tr><td><strong>MemberRegistry</strong></td><td>TitheNumber | FullName | Phone | Email | JoinDate | Status</td></tr>
+            <tr><td><strong>TithePool</strong></td><td>TitheNumber | Status (Available/Assigned) | AssignedTo | DateIssued</td></tr>
+            <tr><td><strong>GivingRecords</strong></td><td>Date | TitheNumber | Name | Category | Amount | Method | Reference | RecordedBy</td></tr>
+            <tr><td><strong>MobileMoneyTx</strong></td><td>DateTime | TxID | SenderNumber | SenderName | Amount | TitheNumber | Status | RawSMS</td></tr>
+            <tr><td><strong>Config</strong></td><td>Key | Value (ChurchName, MMNumber, EmailFrom, etc.)</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== SCRIPTS ===== -->
+  <section class="page" id="page-scripts">
+    <div class="form-section">
+      <div class="form-section-title">📝 Copy these scripts into Google Apps Script</div>
+      <p style="margin-bottom:16px;color:var(--slate);font-size:0.85rem;">Open your Google Sheet → Extensions → Apps Script → paste each block below</p>
+
+      <div style="background:#0F1F3D;border-radius:12px;padding:20px;margin-bottom:16px;">
+        <div style="color:var(--gold);font-size:0.78rem;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:12px;">Code.gs — Full Script</div>
+        <pre id="script-content" style="color:#a8d8a8;font-size:0.78rem;line-height:1.6;overflow-x:auto;white-space:pre-wrap;font-family:monospace;"></pre>
+      </div>
+      <button class="btn btn-gold" onclick="copyScript()">📋 Copy Full Script</button>
+    </div>
+  </section>
+
+</main>
+
+<!-- MODALS -->
+<div class="modal-overlay" id="add-member-modal">
+  <div class="modal">
+    <h3>Add New Member</h3>
+    <div class="form-grid">
+      <div class="form-group"><label>Full Name</label><input type="text" id="new-name" placeholder="Full name"></div>
+      <div class="form-group"><label>Phone</label><input type="text" id="new-phone" placeholder="+256..."></div>
+      <div class="form-group full"><label>Email</label><input type="email" id="new-email" placeholder="email@example.com"></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-outline" onclick="closeModal('add-member-modal')">Cancel</button>
+      <button class="btn btn-gold" onclick="addMember()">Register & Assign Number</button>
+    </div>
+  </div>
+</div>
+
+<div class="notif" id="notif">✅ Action completed</div>
+
+<script>
+// ============================================================
+// DATA STORE (simulated — in production this hits Apps Script)
+// ============================================================
+const SHEET_URL = "https://script.google.com/macros/s/AKfycbxDPLK4419Ml3LZY2U0ghhtOfdDC1TQzSSysYFTuMmK_OFiAFcvaVWsXH4V7CQOjH08uw/exec"; // Replace with deployed URL
+
+const members = [
+  {tithe:"TBGB0001",name:"John Ssemakula",phone:"+256702111001",email:"john@email.com",joined:"2024-01-15",status:"Active"},
+  {tithe:"TBGB0002",name:"Grace Namutebi",phone:"+256702111002",email:"grace@email.com",joined:"2024-01-20",status:"Active"},
+  {tithe:"TBGB0003",name:"Robert Kiggundu",phone:"+256702111003",email:"robert@email.com",joined:"2024-02-01",status:"Active"},
+  {tithe:"TBGB0004",name:"Sarah Nakato",phone:"+256702111004",email:"sarah@email.com",joined:"2024-02-10",status:"Active"},
+  {tithe:"TBGB0005",name:"David Musoke",phone:"+256702111005",email:"david@email.com",joined:"2024-03-05",status:"Inactive"},
+  {tithe:"TBGB0006",name:"Mary Namuganza",phone:"+256702111006",email:"mary@email.com",joined:"2024-03-12",status:"Active"},
+];
+
+const givingRecords = [
+  {date:"2025-04-20",tithe:"TBGB0001",name:"John Ssemakula",category:"Tithe",amount:150000,method:"Cash",ref:""},
+  {date:"2025-04-20",tithe:"TBGB0002",name:"Grace Namutebi",category:"Offertory",amount:50000,method:"Mobile Money",ref:"MM12345"},
+  {date:"2025-04-20",tithe:"TBGB0003",name:"Robert Kiggundu",category:"Church Building",amount:200000,method:"Cheque",ref:"CHQ001"},
+  {date:"2025-04-13",tithe:"TBGB0001",name:"John Ssemakula",category:"Tithe",amount:150000,method:"Cash",ref:""},
+  {date:"2025-04-13",tithe:"TBGB0004",name:"Sarah Nakato",category:"Tithe",amount:100000,method:"Mobile Money",ref:"MM12346"},
+  {date:"2025-04-06",tithe:"TBGB0002",name:"Grace Namutebi",category:"Donation",amount:75000,method:"Cash",ref:""},
+];
+
+const mmTransactions = [
+  {time:"10:32 AM",sender:"+256702111002",name:"Grace Namutebi",amount:50000,tithe:"TBGB0002",status:"Matched"},
+  {time:"09:14 AM",sender:"+256702111004",name:"Sarah Nakato",amount:100000,tithe:"TBGB0004",status:"Matched"},
+  {time:"08:55 AM",sender:"+256712999888",name:"Unknown",amount:30000,tithe:"—",status:"Unmatched"},
+];
+
+let nextTitheIndex = 249; // next available
+
+// ============================================================
+// NAVIGATION
+// ============================================================
+function showPage(id) {
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  document.getElementById('page-'+id).classList.add('active');
+  event.currentTarget.classList.add('active');
+  const titles = {dashboard:'Dashboard',members:'Member Registry','tithe-pool':'Tithe Number Pool',capture:'Capture Giving',records:'Giving Records','mobile-money':'Mobile Money',reports:'Reports & Analytics',setup:'Setup Guide',scripts:'Google Scripts'};
+  document.getElementById('page-title').textContent = titles[id]||id;
+  if(id==='members') renderMembers();
+  if(id==='tithe-pool') renderPool();
+  if(id==='records') renderRecords();
+  if(id==='mobile-money') renderMM();
+  if(id==='reports') initReportCharts();
+  if(id==='scripts') renderScript();
+}
+
+// ============================================================
+// CHARTS
+// ============================================================
+let lineChartInst, donutChartInst;
+const weeks = ['Week 14','Week 15','Week 16','Week 17','Week 18'];
+const chartColors = {tithe:'#C9A84C',offertory:'#2D9E6B',building:'#1A2F57',donation:'#E0882A'};
+
+function initCharts() {
+  const lCtx = document.getElementById('lineChart').getContext('2d');
+  lineChartInst = new Chart(lCtx, {
+    type:'line',
+    data: {
+      labels: weeks,
+      datasets: [
+        {label:'Tithe',data:[1800000,2100000,1950000,2300000,2100000],borderColor:chartColors.tithe,backgroundColor:'rgba(201,168,76,0.08)',tension:0.4,fill:true},
+        {label:'Offertory',data:[900000,1100000,980000,1200000,1050000],borderColor:chartColors.offertory,backgroundColor:'rgba(45,158,107,0.08)',tension:0.4,fill:true},
+        {label:'Building',data:[600000,750000,680000,800000,700000],borderColor:chartColors.building,backgroundColor:'rgba(26,47,87,0.06)',tension:0.4,fill:true},
+        {label:'Donation',data:[250000,320000,290000,380000,350000],borderColor:chartColors.donation,backgroundColor:'rgba(224,136,42,0.07)',tension:0.4,fill:true},
+      ]
+    },
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{font:{family:'DM Sans'}}}},scales:{y:{ticks:{callback:v=>'UGX '+Intl.NumberFormat().format(v/1000)+'K',font:{family:'DM Sans'}}}}}
+  });
+
+  const dCtx = document.getElementById('donutChart').getContext('2d');
+  donutChartInst = new Chart(dCtx, {
+    type:'doughnut',
+    data:{
+      labels:['Cash','Mobile Money','Cheque'],
+      datasets:[{data:[52,35,13],backgroundColor:['#C9A84C','#2D9E6B','#1A2F57'],borderWidth:0,hoverOffset:6}]
+    },
+    options:{responsive:true,maintainAspectRatio:false,cutout:'68%',plugins:{legend:{position:'bottom',labels:{font:{family:'DM Sans'},padding:14}}}}
+  });
+}
+
+function updateCharts() { /* In production, re-fetch data from Apps Script */ }
+
+// ============================================================
+// MEMBERS
+// ============================================================
+function renderMembers(data) {
+  const rows = (data||members).map(m=>`
+    <tr>
+      <td><span class="tithe-badge">${m.tithe}</span></td>
+      <td class="fw-bold">${m.name}</td>
+      <td>${m.phone}</td>
+      <td>${m.email}</td>
+      <td>${m.joined}</td>
+      <td><span class="badge ${m.status==='Active'?'badge-green':'badge-gold'}">${m.status}</span></td>
+      <td>
+        <button class="btn btn-outline" style="padding:4px 10px;font-size:0.75rem;" onclick="viewMember('${m.tithe}')">View</button>
+        <button class="btn btn-gold" style="padding:4px 10px;font-size:0.75rem;" onclick="emailMember('${m.tithe}')">📧 Email</button>
+      </td>
+    </tr>`).join('');
+  document.getElementById('member-tbody').innerHTML = rows;
+}
+
+function filterMembers() {
+  const q = document.getElementById('member-search').value.toLowerCase();
+  renderMembers(members.filter(m=>m.name.toLowerCase().includes(q)||m.tithe.toLowerCase().includes(q)||m.phone.includes(q)));
+}
+
+function addMember() {
+  const name=document.getElementById('new-name').value.trim();
+  const phone=document.getElementById('new-phone').value.trim();
+  const email=document.getElementById('new-email').value.trim();
+  if(!name||!phone||!email){notify('Please fill all fields');return;}
+  const tithe = 'TBGB'+String(nextTitheIndex++).padStart(4,'0');
+  members.push({tithe,name,phone,email,joined:new Date().toISOString().slice(0,10),status:'Active'});
+  closeModal('add-member-modal');
+  renderMembers();
+  notify(`✅ ${name} registered as ${tithe} — Email sent!`);
+}
+
+function viewMember(tithe) { showPage('records'); document.getElementById('rec-search').value=tithe; filterRecords(); }
+function emailMember(tithe) { notify(`📧 Monthly statement emailed to member ${tithe}`); }
+function exportMembers() { notify('📋 Member list exported to CSV'); }
+
+// ============================================================
+// TITHE POOL
+// ============================================================
+function renderPool(filter) {
+  const f = filter || document.getElementById('pool-filter')?.value || 'all';
+  let rows = '';
+  for(let i=1;i<=30;i++) {
+    const num='TBGB'+String(i).padStart(4,'0');
+    const m=members.find(x=>x.tithe===num);
+    const assigned=!!m;
+    if(f==='assigned'&&!assigned) continue;
+    if(f==='available'&&assigned) continue;
+    rows+=`<tr>
+      <td><span class="tithe-badge">${num}</span></td>
+      <td><span class="badge ${assigned?'badge-green':'badge-gold'}">${assigned?'Assigned':'Available'}</span></td>
+      <td>${m?m.name:'—'}</td>
+      <td>${m?m.joined:'—'}</td>
+    </tr>`;
+  }
+  rows+=`<tr><td colspan="4" style="text-align:center;color:var(--slate);padding:16px;">... (2000 entries in Google Sheet) ...</td></tr>`;
+  document.getElementById('pool-tbody').innerHTML=rows;
+}
+function filterPool(){renderPool(document.getElementById('pool-filter').value);}
+
+// ============================================================
+// CAPTURE GIVING
+// ============================================================
+function lookupMember() {
+  const q=document.getElementById('cap-tithe').value.toLowerCase();
+  const m=members.find(x=>x.tithe.toLowerCase()===q||x.name.toLowerCase().includes(q));
+  document.getElementById('cap-name').value=m?m.name:'';
+  if(m) {
+    const rows=givingRecords.filter(r=>r.tithe===m.tithe).slice(0,5).map(r=>`<tr><td>${r.date}</td><td>${r.category}</td><td>UGX ${r.amount.toLocaleString()}</td><td>${r.method}</td></tr>`).join('');
+    document.getElementById('lookup-tbody').innerHTML=rows;
+    document.getElementById('lookup-result').style.display=rows?'block':'none';
+  } else { document.getElementById('lookup-result').style.display='none'; }
+}
+
+function captureGiving() {
+  const tithe=document.getElementById('cap-tithe').value;
+  const name=document.getElementById('cap-name').value;
+  const cat=document.getElementById('cap-category').value;
+  const amt=document.getElementById('cap-amount').value;
+  const method=document.getElementById('cap-method').value;
+  if(!tithe||!cat||!amt){notify('⚠️ Please fill required fields');return;}
+  givingRecords.unshift({date:document.getElementById('cap-date').value,tithe,name,category:cat,amount:parseInt(amt),method,ref:document.getElementById('cap-ref').value});
+  notify(`✅ Recorded UGX ${parseInt(amt).toLocaleString()} ${cat} for ${name||tithe}`);
+  clearCapture();
+}
+
+function clearCapture() {
+  ['cap-tithe','cap-name','cap-amount','cap-ref','cap-recorder'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('lookup-result').style.display='none';
+}
+
+// ============================================================
+// RECORDS
+// ============================================================
+function renderRecords(data) {
+  const rows=(data||givingRecords).map(r=>`<tr>
+    <td>${r.date}</td>
+    <td><span class="tithe-badge">${r.tithe}</span></td>
+    <td>${r.name}</td>
+    <td>${r.category}</td>
+    <td class="amount">UGX ${r.amount.toLocaleString()}</td>
+    <td>${r.method}</td>
+    <td style="color:var(--slate)">${r.ref||'—'}</td>
+  </tr>`).join('');
+  document.getElementById('records-tbody').innerHTML=rows;
+}
+
+function filterRecords() {
+  const q=document.getElementById('rec-search').value.toLowerCase();
+  const cat=document.getElementById('rec-category').value;
+  let filtered=givingRecords;
+  if(q) filtered=filtered.filter(r=>r.tithe.toLowerCase().includes(q)||r.name.toLowerCase().includes(q));
+  if(cat!=='all') filtered=filtered.filter(r=>r.category===cat);
+  renderRecords(filtered);
+}
+function exportRecords(){notify('📋 Records exported to CSV');}
+
+// ============================================================
+// MOBILE MONEY
+// ============================================================
+function renderMM() {
+  document.getElementById('mm-transactions').innerHTML=mmTransactions.map(t=>`
+    <div class="mm-entry">
+      <div class="mm-icon in">📥</div>
+      <div class="mm-details">
+        <h4>${t.name} <span style="font-size:0.72rem;color:var(--slate)">${t.sender}</span></h4>
+        <p>${t.time} · Tithe: ${t.tithe} · <span class="badge ${t.status==='Matched'?'badge-green':'badge-gold'}">${t.status}</span></p>
+      </div>
+      <div class="mm-amount in">UGX ${t.amount.toLocaleString()}</div>
+    </div>`).join('');
+}
+function saveMM(){
+  const tithe=document.getElementById('mm-tithe').value;
+  const amt=document.getElementById('mm-amount').value;
+  const sender=document.getElementById('mm-sender').value;
+  mmTransactions.unshift({time:'Just now',sender,name:'Manual Entry',amount:parseInt(amt)||0,tithe,status:'Manual'});
+  notify('✅ MM transaction recorded');
+  renderMM();
+}
+
+// ============================================================
+// REPORTS CHARTS
+// ============================================================
+function initReportCharts() {
+  setTimeout(()=>{
+    const mb=document.getElementById('monthlyBar');
+    const cp=document.getElementById('categoryPie');
+    const gl=document.getElementById('growthLine');
+    if(!mb||mb._chart) return;
+    mb._chart=new Chart(mb.getContext('2d'),{type:'bar',data:{labels:['Jan','Feb','Mar','Apr'],datasets:[{label:'Total Giving',data:[14200000,16800000,15400000,18200000],backgroundColor:'#C9A84C',borderRadius:6}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}}}});
+    cp._chart=new Chart(cp.getContext('2d'),{type:'pie',data:{labels:['Tithe','Offertory','Building','Donation'],datasets:[{data:[50,25,17,8],backgroundColor:['#C9A84C','#2D9E6B','#1A2F57','#E0882A'],borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false}});
+    gl._chart=new Chart(gl.getContext('2d'),{type:'line',data:{labels:['Jan','Feb','Mar','Apr'],datasets:[{label:'Members',data:[210,228,239,248],borderColor:'#C9A84C',fill:false,tension:0.4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}}}});
+  },100);
+}
+
+// Summary table
+function renderSummary() {
+  document.getElementById('summary-tbody').innerHTML=members.slice(0,5).map(m=>{
+    const recs=givingRecords.filter(r=>r.tithe===m.tithe);
+    const sum=cat=>recs.filter(r=>r.category===cat).reduce((a,b)=>a+b.amount,0);
+    const total=recs.reduce((a,b)=>a+b.amount,0);
+    return`<tr><td><span class="tithe-badge">${m.tithe}</span></td><td>${m.name}</td><td>UGX ${sum('Tithe').toLocaleString()}</td><td>UGX ${sum('Offertory').toLocaleString()}</td><td>UGX ${sum('Church Building').toLocaleString()}</td><td>UGX ${sum('Donation').toLocaleString()}</td><td class="fw-bold">UGX ${total.toLocaleString()}</td></tr>`;
+  }).join('');
+}
+
+// ============================================================
+// SCRIPTS TAB
+// ============================================================
+function renderScript() {
+  document.getElementById('script-content').textContent = getFullScript();
+}
+function copyScript() {
+  navigator.clipboard.writeText(getFullScript()).then(()=>notify('📋 Script copied to clipboard!'));
+}
+
+// ============================================================
+// MODAL
+// ============================================================
+function openModal(id){document.getElementById(id).classList.add('open');}
+function closeModal(id){document.getElementById(id).classList.remove('open');}
+document.querySelectorAll('.modal-overlay').forEach(o=>o.addEventListener('click',e=>{if(e.target===o)o.classList.remove('open');}));
+
+// ============================================================
+// NOTIFICATIONS
+// ============================================================
+function notify(msg) {
+  const n=document.getElementById('notif');
+  n.textContent=msg; n.classList.add('show');
+  setTimeout(()=>n.classList.remove('show'),3000);
+}
+
+// ============================================================
+// DATE
+// ============================================================
+document.getElementById('live-date').textContent = new Date().toLocaleDateString('en-UG',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+document.getElementById('cap-date').value=new Date().toISOString().slice(0,10);
+
+// ============================================================
+// FULL GOOGLE APPS SCRIPT
+// ============================================================
+function getFullScript(){
+return `// ================================================================
+// CHURCHFINANCE PRO — Google Apps Script (Code.gs)
+// Paste this into Extensions > Apps Script in your Google Sheet
+// ================================================================
+
+const SHEET_ID = SpreadsheetApp.getActiveSpreadsheet().getId();
+const ss = SpreadsheetApp.getActiveSpreadsheet();
+
+// -------------------------------------------------------
+// SHEET NAMES
+// -------------------------------------------------------
+const SHEETS = {
+  members:   "MemberRegistry",
+  pool:      "TithePool",
+  giving:    "GivingRecords",
+  mobilemoney: "MobileMoneyTx",
+  config:    "Config"
+};
+
+// -------------------------------------------------------
+// UTILITY: Get a sheet by name
+// -------------------------------------------------------
+function getSheet(name) {
+  return ss.getSheetByName(name);
+}
+
+// -------------------------------------------------------
+// SETUP: Initialize all sheets and tithe pool
+// Run this ONCE from the Apps Script editor
+// -------------------------------------------------------
+function setupAll() {
+  setupSheets();
+  generateTithePool();
+  Logger.log("Setup complete!");
+}
+
+function setupSheets() {
+  const headers = {
+    MemberRegistry:  ["TitheNumber","FullName","Phone","Email","JoinDate","Status"],
+    TithePool:       ["TitheNumber","Status","AssignedTo","DateIssued"],
+    GivingRecords:   ["Date","TitheNumber","Name","Category","Amount","Method","Reference","RecordedBy","Timestamp"],
+    MobileMoneyTx:   ["DateTime","TxID","SenderNumber","SenderName","Amount","TitheNumber","Status","RawSMS"],
+    Config:          ["Key","Value"]
+  };
+  Object.entries(headers).forEach(([name, cols]) => {
+    let sh = ss.getSheetByName(name);
+    if (!sh) sh = ss.insertSheet(name);
+    sh.getRange(1, 1, 1, cols.length).setValues([cols])
+      .setBackground("#0F1F3D").setFontColor("#C9A84C").setFontWeight("bold");
+    sh.setFrozenRows(1);
+  });
+
+  // Seed Config
+  const cfg = getSheet("Config");
+  const cfgData = [
+    ["ChurchName",      "My Church"],
+    ["MMNumber",        "+256700000000"],
+    ["EmailFrom",       "church@gmail.com"],
+    ["TithePrefix",     "TBGB"],
+    ["TithePoolStart",  "1"],
+    ["TithePoolEnd",    "2000"],
+    ["MonthlyEmailDay", "1"],
+  ];
+  if (cfg.getLastRow() <= 1) cfg.getRange(2, 1, cfgData.length, 2).setValues(cfgData);
+  Logger.log("Sheets initialized.");
+}
+
+// -------------------------------------------------------
+// B) TITHE POOL: Generate TBGB0001 to TBGB2000
+// -------------------------------------------------------
+function generateTithePool() {
+  const sh = getSheet("TithePool");
+  if (sh.getLastRow() > 1) {
+    Logger.log("Pool already generated. Clear sheet first if needed.");
+    return;
+  }
+  const rows = [];
+  for (let i = 1; i <= 2000; i++) {
+    rows.push(["TBGB" + String(i).padStart(4,"0"), "Available", "", ""]);
+  }
+  sh.getRange(2, 1, rows.length, 4).setValues(rows);
+  Logger.log("Tithe pool generated: TBGB0001-TBGB2000");
+}
+
+// -------------------------------------------------------
+// B2) Get the next available tithe number (sequential)
+// -------------------------------------------------------
+function getNextTitheNumber() {
+  const sh = getSheet("TithePool");
+  const data = sh.getDataRange().getValues();
+  for (let i = 1; i < data.length; i++) {
+    if (data[i][1] === "Available") {
+      return { number: data[i][0], row: i + 1 };
+    }
+  }
+  return null; // Pool exhausted
+}
+
+// -------------------------------------------------------
+// B3) Assign a tithe number to a member
+// -------------------------------------------------------
+function assignTitheNumber(memberName, email) {
+  const next = getNextTitheNumber();
+  if (!next) {
+    Logger.log("No tithe numbers available!");
+    return null;
+  }
+  const sh = getSheet("TithePool");
+  const today = new Date().toISOString().slice(0,10);
+  sh.getRange(next.row, 2, 1, 3).setValues([["Assigned", memberName, today]]);
+  Logger.log("Assigned " + next.number + " to " + memberName);
+
+  // Send email with tithe number
+  if (email) sendTitheNumberEmail(email, memberName, next.number);
+  return next.number;
+}
+
+// -------------------------------------------------------
+// A1) Send tithe number to member by email instantly
+// -------------------------------------------------------
+function sendTitheNumberEmail(email, name, titheNumber) {
+  const cfg = getConfig();
+  const church = cfg["ChurchName"] || "Our Church";
+  const subject = church + " — Your Tithe Number";
+  const body = \`Dear \${name},
+
+Thank you for registering with \${church}.
+
+Your unique tithe number is:
+
+    *** \${titheNumber} ***
+
+Please use this number whenever you give:
+  • Tithe
+  • Offertory
+  • Church Building Fund
+  • Donations
+
+Keep this number safe. If you lose it, contact the church office.
+
+God bless you!
+
+\${church} Finance Team\`;
+
+  GmailApp.sendEmail(email, subject, body);
+  Logger.log("Email sent to " + email);
+}
+
+// -------------------------------------------------------
+// A3) Send monthly giving statement by email
+// -------------------------------------------------------
+function sendMonthlyStatements() {
+  const members = getSheet("MemberRegistry").getDataRange().getValues();
+  const giving = getSheet("GivingRecords").getDataRange().getValues();
+  const cfg = getConfig();
+  const church = cfg["ChurchName"] || "Our Church";
+
+  const now = new Date();
+  const monthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+  const monthEnd   = new Date(now.getFullYear(), now.getMonth(), 0);
+  const yearStart  = new Date(now.getFullYear(), 0, 1);
+
+  for (let i = 1; i < members.length; i++) {
+    const [tithe, name, phone, email, , status] = members[i];
+    if (!email || status === "Inactive") continue;
+
+    const memberGiving = giving.filter((r, idx) => idx > 0 && r[1] === tithe);
+    const monthly = memberGiving.filter(r => {
+      const d = new Date(r[0]);
+      return d >= monthStart && d <= monthEnd;
+    });
+    const ytd = memberGiving.filter(r => new Date(r[0]) >= yearStart);
+
+    const fmt = rows => rows.length === 0 ? "  No giving recorded." :
+      rows.map(r => \`  \${r[0]}  \${r[3].padEnd(18)}  UGX \${Number(r[4]).toLocaleString()}  [\${r[5]}]\`).join("\\n");
+
+    const monthTotal = monthly.reduce((s,r)=>s+Number(r[4]),0);
+    const ytdTotal   = ytd.reduce((s,r)=>s+Number(r[4]),0);
+
+    const month = monthStart.toLocaleString('default',{month:'long',year:'numeric'});
+
+    const body = \`Dear \${name},
+
+Here is your giving statement for \${month}:
+
+MONTHLY GIVING (\${month}):
+\${fmt(monthly)}
+
+Monthly Total: UGX \${monthTotal.toLocaleString()}
+
+YEAR-TO-DATE GIVING (\${now.getFullYear()}):
+\${fmt(ytd)}
+
+YTD Total: UGX \${ytdTotal.toLocaleString()}
+
+Thank you for your faithfulness!
+
+\${church} Finance Team\`;
+
+    GmailApp.sendEmail(email, \`\${church} — Giving Statement \${month}\`, body);
+    Utilities.sleep(500);
+  }
+  Logger.log("Monthly statements sent.");
+}
+
+// -------------------------------------------------------
+// F3) Member Registration Form Submission Trigger
+// Attach this to the Member Registration Google Form
+// -------------------------------------------------------
+function onMemberFormSubmit(e) {
+  const responses = e.namedValues;
+  const name  = (responses["Full Name"]      || responses["Name"]  || [""])[0].trim();
+  const phone = (responses["Phone Number"]   || responses["Phone"] || [""])[0].trim();
+  const email = (responses["Email Address"]  || responses["Email"] || [""])[0].trim();
+
+  if (!name || !email) return;
+
+  // Check for duplicate
+  const sh = getSheet("MemberRegistry");
+  const existing = sh.getDataRange().getValues();
+  const isDup = existing.slice(1).some(r => r[2] === phone || r[3] === email);
+  if (isDup) {
+    GmailApp.sendEmail(email, "Already Registered",
+      \`Dear \${name}, you are already registered. Please contact the office for your tithe number.\`);
+    return;
+  }
+
+  // Assign tithe number
+  const titheNum = assignTitheNumber(name, email);
+  if (!titheNum) {
+    GmailApp.sendEmail(email, "Registration Issue", "Sorry, no tithe numbers available. Contact the church office.");
+    return;
+  }
+
+  // Save to MemberRegistry
+  const today = new Date().toISOString().slice(0,10);
+  sh.appendRow([titheNum, name, phone, email, today, "Active"]);
+  Logger.log("Registered: " + name + " — " + titheNum);
+}
+
+// -------------------------------------------------------
+// F2) Tithe Number Request Form Submission Trigger
+// Attach this to the Tithe Number Request Google Form
+// -------------------------------------------------------
+function onTitheRequestFormSubmit(e) {
+  const responses = e.namedValues;
+  const name  = (responses["Your Full Name"] || responses["Name"] || [""])[0].trim();
+  const email = (responses["Email Address"]  || responses["Email"]|| [""])[0].trim();
+
+  if (!name || !email) return;
+
+  // Check if already has a number
+  const sh = getSheet("MemberRegistry");
+  const existing = sh.getDataRange().getValues();
+  const found = existing.slice(1).find(r => r[3] === email);
+  if (found) {
+    sendTitheNumberEmail(email, name, found[0]);
+    return;
+  }
+
+  const titheNum = assignTitheNumber(name, email);
+  if (!titheNum) {
+    GmailApp.sendEmail(email, "Tithe Number Request", "Sorry, no tithe numbers available.");
+  }
+}
+
+// -------------------------------------------------------
+// C3 & E1) Receive SMS webhook from SMS Forwarder app
+// Deploy as Web App (GET/POST) on designated church number
+// -------------------------------------------------------
+function doPost(e) {
+  try {
+    const params = JSON.parse(e.postData.contents);
+    const sms    = params.sms || params.message || "";
+    const from   = params.from || params.sender || "";
+    const time   = params.sentTime || new Date().toISOString();
+
+    if (isMobileMoneyMessage(sms)) {
+      parseMobileMoneyMessage(sms, from, time);
+    }
+    return ContentService.createTextOutput(JSON.stringify({status:"ok"}))
+      .setMimeType(ContentService.MimeType.JSON);
+  } catch(err) {
+    Logger.log("doPost error: " + err);
+    return ContentService.createTextOutput(JSON.stringify({status:"error",msg:err.toString()}))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+}
+
+function doGet(e) {
+  // For testing / ping
+  return ContentService.createTextOutput(JSON.stringify({status:"ChurchFinance API running"}))
+    .setMimeType(ContentService.MimeType.JSON);
+}
+
+// -------------------------------------------------------
+// E1) Parse Mobile Money SMS (MTN Uganda format)
+// -------------------------------------------------------
+function isMobileMoneyMessage(sms) {
+  return /received|you have received|deposited/i.test(sms);
+}
+
+function parseMobileMoneyMessage(sms, from, time) {
+  // MTN Uganda format example:
+  // "You have received UGX 50,000 from 0702111002 GRACE NAMUTEBI. Your new balance is..."
+  const amtMatch   = sms.match(/UGX\s*([\d,]+)/i);
+  const nameMatch  = sms.match(/from\s+\d+\s+([A-Z ]+)\./i) || sms.match(/from\s+([A-Z ]+)\s+\d/i);
+  const txMatch    = sms.match(/TxID[:\s]+([A-Z0-9]+)/i) || sms.match(/transaction ID[:\s]+([A-Z0-9]+)/i);
+
+  const amount     = amtMatch  ? parseInt(amtMatch[1].replace(/,/g,"")) : 0;
+  const senderName = nameMatch ? nameMatch[1].trim() : "Unknown";
+  const txID       = txMatch   ? txMatch[1] : "TX" + Date.now();
+
+  // Try to match to a member by phone
+  const senderNum = from.replace(/[^0-9]/g,"");
+  const members   = getSheet("MemberRegistry").getDataRange().getValues();
+  let titheNum    = "";
+  let matchedName = senderName;
+  for (let i=1; i<members.length; i++) {
+    if (members[i][2].replace(/[^0-9]/g,"").endsWith(senderNum.slice(-9))) {
+      titheNum    = members[i][0];
+      matchedName = members[i][1];
+      break;
+    }
+  }
+
+  const status = titheNum ? "Matched" : "Unmatched";
+  const sh = getSheet("MobileMoneyTx");
+  sh.appendRow([time, txID, from, matchedName, amount, titheNum, status, sms]);
+
+  // E2) Send thank-you message
+  sendThankYouSMS(from, matchedName, amount);
+
+  // Auto-record in GivingRecords if matched
+  if (titheNum) {
+    getSheet("GivingRecords").appendRow([
+      new Date().toISOString().slice(0,10),
+      titheNum, matchedName, "Tithe", amount, "Mobile Money", txID, "Auto-MM",
+      new Date().toISOString()
+    ]);
+  }
+  Logger.log(\`MM parsed: \${amount} from \${matchedName} (\${titheNum||'Unmatched'})\`);
+}
+
+// -------------------------------------------------------
+// E2) Send thank-you SMS via email-to-SMS gateway or
+//     use AfricasTalking / Vonage SMS API
+// -------------------------------------------------------
+function sendThankYouSMS(phone, name, amount) {
+  const cfg = getConfig();
+  const church = cfg["ChurchName"] || "Our Church";
+  const msg = \`Dear \${name}, thank you for your gift of UGX \${amount.toLocaleString()} to \${church}. God bless you abundantly! - \${church}\`;
+
+  // Option 1: Log for manual sending
+  Logger.log("SEND SMS to " + phone + ": " + msg);
+
+  // Option 2: Africa's Talking (uncomment and add credentials)
+  // const options = {method:"post", payload:{username:"YourUsername", apiKey:"YourKey", to:phone, message:msg}};
+  // UrlFetchApp.fetch("https://api.africastalking.com/version1/messaging", options);
+}
+
+// -------------------------------------------------------
+// C2) Look up a member by tithe number or name
+// -------------------------------------------------------
+function lookupMember(query) {
+  const members = getSheet("MemberRegistry").getDataRange().getValues();
+  query = query.toLowerCase().trim();
+  for (let i=1; i<members.length; i++) {
+    if (members[i][0].toLowerCase()===query || members[i][1].toLowerCase().includes(query)) {
+      return {
+        tithe: members[i][0], name: members[i][1], phone: members[i][2],
+        email: members[i][3], joined: members[i][4], status: members[i][5]
+      };
+    }
+  }
+  return null;
+}
+
+// -------------------------------------------------------
+// WEB APP API: Handle GET requests from the dashboard
+// -------------------------------------------------------
+// doGet already defined above. Here we extend for data API:
+// Usage: ?action=getMembers or ?action=getDashboard etc.
+// (Extend doGet with query routing for full dashboard integration)
+
+// -------------------------------------------------------
+// TRIGGERS: Set these up in Apps Script > Triggers
+// -------------------------------------------------------
+function createTriggers() {
+  // Monthly statement trigger — runs on 1st of each month
+  ScriptApp.newTrigger("sendMonthlyStatements")
+    .timeBased().onMonthDay(1).atHour(8).create();
+
+  // Member form trigger — attach to your registration form
+  // (Set via form > Responses > Link to sheet, then add trigger manually)
+  Logger.log("Set form submit triggers manually via Apps Script > Triggers");
+}
+
+// -------------------------------------------------------
+// CONFIG HELPER
+// -------------------------------------------------------
+function getConfig() {
+  const sh  = getSheet("Config");
+  const data = sh.getDataRange().getValues();
+  const cfg = {};
+  data.slice(1).forEach(row => { if(row[0]) cfg[row[0]] = row[1]; });
+  return cfg;
+}
+
+// -------------------------------------------------------
+// DASHBOARD DATA ENDPOINT (called by GitHub Pages frontend)
+// -------------------------------------------------------
+function getDashboardData() {
+  const members  = getSheet("MemberRegistry").getDataRange().getValues();
+  const giving   = getSheet("GivingRecords").getDataRange().getValues();
+  const pool     = getSheet("TithePool").getDataRange().getValues();
+
+  const totalMembers  = members.length - 1;
+  const totalAssigned = pool.slice(1).filter(r=>r[1]==="Assigned").length;
+
+  // Active tithers: gave in last 30 days
+  const thirtyDaysAgo = new Date(); thirtyDaysAgo.setDate(thirtyDaysAgo.getDate()-30);
+  const active = new Set(giving.slice(1).filter(r=>new Date(r[0])>=thirtyDaysAgo).map(r=>r[1]));
+
+  // This week's giving
+  const weekStart = new Date(); weekStart.setDate(weekStart.getDate()-weekStart.getDay());
+  const weekGiving = giving.slice(1).filter(r=>new Date(r[0])>=weekStart);
+  const weekTotal  = weekGiving.reduce((s,r)=>s+Number(r[4]),0);
+
+  return {
+    totalMembers, totalAssigned, activeTithers: active.size,
+    weekTotal, weekGiving
+  };
+}`;
+}
+
+// ============================================================
+// INIT
+// ============================================================
+window.addEventListener('DOMContentLoaded', ()=>{
+  renderMembers();
+  renderRecords();
+  renderMM();
+  renderSummary();
+  setTimeout(initCharts, 100);
+});
+</script>
+</body>
+</html>
+`;
